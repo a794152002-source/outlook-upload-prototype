@@ -531,6 +531,22 @@
       document.getElementById("resultArea").innerHTML = '<div class="empty-state">選擇檔案後，按「模擬檢查」查看結果。</div>';
     }
 
+    function applyUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const scheduleNo = params.get("scheduleNo");
+      const applicant = params.get("applicant");
+      const partNo = params.get("partNo");
+
+      if (scheduleNo) {
+        const select = document.getElementById("scheduleNo");
+        const exists = Array.from(select.options).some(option => option.value === scheduleNo);
+        if (!exists) select.add(new Option(scheduleNo, scheduleNo, true, true));
+        select.value = scheduleNo;
+      }
+      if (applicant) document.getElementById("applicant").value = applicant;
+      if (partNo) document.getElementById("partNo").value = partNo;
+    }
+
     function escapeHtml(text) {
       return String(text == null ? "" : text)
         .replace(/&/g, "&amp;")
@@ -541,6 +557,7 @@
     }
 
     initDropZone();
+    applyUrlParams();
   </script>
 </body>
 </html>
