@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>量測檔上傳與 Outlook 通知雛形</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: #111;
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+    }
+    .page {
+      min-height: 100vh;
+      padding: 30px 34px 46px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+      border-bottom: 3px solid #197a2e;
+      padding-bottom: 22px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .logo {
+      width: 76px;
+      height: 76px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #1b7c34, #8bc34a);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 34px;
+      font-weight: 900;
+      box-shadow: 0 4px 14px rgba(46, 125, 50, .18);
+    }
+    h1 {
+      margin: 0;
+      color: #14762b;
+      font-size: 31px;
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      margin: 7px 0 0;
+      color: #4b604b;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+    .status-pill {
+      min-width: 220px;
+      border: 1px solid #d7e6d3;
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: #f8fcf7;
+      box-shadow: 0 3px 12px rgba(46, 125, 50, .08);
+    }
+    .status-pill span {
+      display: block;
+      color: #547056;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .status-pill b {
+      display: block;
+      margin-top: 6px;
+      color: #145c25;
+      font-size: 26px;
+      line-height: 1;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(360px, 460px) 1fr;
+      gap: 22px;
+      margin-top: 26px;
+      align-items: start;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #d7e6d3;
+      border-radius: 16px;
+      box-shadow: 0 4px 14px rgba(46, 125, 50, .10);
+      overflow: hidden;
+    }
+    .panel-head {
+      padding: 18px 20px;
+      border-bottom: 1px solid #e6efe4;
+      background: #fbfffb;
+    }
+    h2 {
+      margin: 0;
+      color: #111;
+      font-size: 21px;
+    }
+    .panel-body { padding: 18px 20px 20px; }
+    label {
+      display: block;
+      color: #2f4d34;
+      font-size: 14px;
+      font-weight: 900;
+      margin: 14px 0 7px;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cfd8cc;
+      border-radius: 10px;
+      min-height: 45px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+    .upload-box {
+      border: 2px dashed #94bf8d;
+      border-radius: 16px;
+      background: #f8fcf7;
+      padding: 22px;
+      text-align: center;
+      margin-top: 14px;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+    .upload-box.dragover {
+      background: #eef8ee;
+      border-color: #2e7d32;
+      box-shadow: 0 0 0 4px rgba(46, 125, 50, .12);
+      transform: translateY(-1px);
+    }
+    .upload-box strong {
+      display: block;
+      color: #145c25;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .upload-box p {
+      margin: 0 0 14px;
+      color: #60705f;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .file-name {
+      margin-top: 10px;
+      color: #455a45;
+      font-weight: 800;
+      font-size: 13px;
+      word-break: break-all;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-weight: 900;
+      cursor: pointer;
+      min-height: 45px;
+      font-family: inherit;
+    }
+    .primary { background: #2e7d32; color: white; flex: 1; }
+    .secondary { background: #e8f5e9; color: #1b5e20; }
+    .disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .flow-step {
+      border: 1px solid #d7e6d3;
+      border-radius: 14px;
+      background: #fff;
+      padding: 14px;
+      min-height: 94px;
+    }
+    .flow-step b {
+      display: block;
+      color: #145c25;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .flow-step span {
+      color: #60705f;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+    .result-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-radius: 16px;
+      padding: 18px 20px;
+      background: #eef8ee;
+      border: 1px solid #cde7cb;
+      margin-bottom: 18px;
+    }
+    .result-banner b {
+      display: block;
+      color: #145c25;
+      font-size: 24px;
+    }
+    .result-banner span {
+      color: #546e54;
+      font-weight: 800;
+    }
+    .result-ok {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #2e7d32;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 22px;
+      flex: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      min-width: 760px;
+    }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid #e1eadf;
+      border-radius: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid #edf3eb;
+      padding: 11px 12px;
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+    th {
+      background: #43a047;
+      color: white;
+      position: sticky;
+      top: 0;
+      white-space: nowrap;
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-weight: 900;
+      font-size: 12px;
+    }
+    .tag.ok { background: #e8f5e9; color: #1b5e20; }
+    .tag.warn { background: #fff8e1; color: #8a6200; }
+    .tag.ng { background: #ffebee; color: #b71c1c; }
+    .mail-preview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .mail-card {
+      border: 1px solid #d7e6d3;
+      border-radius: 16px;
+      padding: 16px;
+      background: #fbfffb;
+    }
+    .mail-card h3 {
+      margin: 0 0 12px;
+      font-size: 17px;
+      color: #145c25;
+    }
+    .kv {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 7px 10px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .kv span { color: #657265; font-weight: 900; }
+    .kv b { color: #222; }
+    .note {
+      color: #6a7468;
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 12px;
+    }
+    .empty-state {
+      padding: 42px 20px;
+      text-align: center;
+      color: #60705f;
+      font-weight: 900;
+      border: 1px dashed #cfe0cb;
+      border-radius: 16px;
+      background: #fbfffb;
+    }
+    @media (max-width: 980px) {
+      .layout, .mail-preview { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .topbar { flex-direction: column; }
+      .status-pill { width: 100%; }
+    }
+    @media (max-width: 560px) {
+      .page { padding: 18px 14px 32px; }
+      .brand { align-items: flex-start; }
+      .logo { width: 54px; height: 54px; font-size: 25px; border-radius: 12px; }
+      h1 { font-size: 23px; }
+      .flow { grid-template-columns: 1fr; }
+      .actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">測</div>
+        <div>
+          <h1>量測檔上傳與 Outlook 通知</h1>
+          <p class="subtitle">雛形示意：上傳 Excel 後先檢查數值，OK 才產生轉寄通知。</p>
+        </div>
+      </div>
+      <div class="status-pill">
+        <span>目前狀態</span>
+        <b id="topStatus">等待上傳</b>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>上傳量測檔</h2>
+        </div>
+        <div class="panel-body">
+          <label>排程編號</label>
+          <select id="scheduleNo">
+            <option>J01 2026-06010001</option>
+            <option>J01 2026-06010002</option>
+            <option>J01 2026-06010003</option>
+          </select>
+
+          <label>申請人</label>
+          <input id="applicant" value="李春菊" readonly>
+
+          <label>料號</label>
+          <input id="partNo" value="BKZ840L/R01320 小BK" readonly>
+
+          <div id="dropZone" class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <strong>拖拉量測 Excel 到這裡</strong>
+            <p>第一版會支援 .xlsx / .xls，並依料號規格檢查尺寸、公差、空白與格式。</p>
+            <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" onchange="showFileName()" hidden>
+            <button type="button" class="secondary" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">選擇檔案</button>
+            <div id="fileName" class="file-name">尚未選擇檔案</div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" onclick="runPrototypeCheck()">模擬檢查</button>
+            <button class="secondary" onclick="resetPrototype()">重設</button>
+          </div>
+          <p class="note">這個雛形目前不會上傳到正式系統，也不會寄信，只展示流程與畫面。</p>
+        </div>
+      </section>
+
+      <main>
+        <div class="flow">
+          <div class="flow-step"><b>1. 上傳</b><span>選擇該排程的量測 Excel。</span></div>
+          <div class="flow-step"><b>2. 檢查</b><span>比對尺寸欄位、數值格式與公差範圍。</span></div>
+          <div class="flow-step"><b>3. 確認</b><span>全部 OK 後才允許建立通知。</span></div>
+          <div class="flow-step"><b>4. 轉寄</b><span>之後串 Outlook 或 Power Automate 寄給申請者。</span></div>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>檢查結果</h2>
+          </div>
+          <div class="panel-body" id="resultArea">
+            <div class="empty-state">選擇檔案後，按「模擬檢查」查看結果。</div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    let selectedPrototypeFile = null;
+
+    function initDropZone() {
+      const zone = document.getElementById("dropZone");
+      const input = document.getElementById("fileInput");
+      if (!zone || !input) return;
+
+      ["dragenter", "dragover"].forEach(eventName => {
+        zone.addEventListener(eventName, event => {
+          event.preventDefault();
+          event.stopPropagation();
+          zone.classList.add("dragover");
+        });
+      });
+
+      ["dragleave", "drop"].forEach(eventName => {
+        zone.addEventListener(eventName, event => {
+          event.preventDefault();
+          event.stopPropagation();
+          zone.classList.remove("dragover");
+        });
+      });
+
+      zone.addEventListener("drop", event => {
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (!file) return;
+        selectedPrototypeFile = file;
+        input.value = "";
+        updateFileName(file.name);
+      });
+    }
+
+    function updateFileName(name) {
+      document.getElementById("fileName").textContent = name || "尚未選擇檔案";
+    }
+
+    function showFileName() {
+      const input = document.getElementById("fileInput");
+      selectedPrototypeFile = input.files && input.files[0] ? input.files[0] : null;
+      updateFileName(selectedPrototypeFile ? selectedPrototypeFile.name : "");
+    }
+
+    function runPrototypeCheck() {
+      const input = document.getElementById("fileInput");
+      const file = selectedPrototypeFile || (input.files && input.files[0]);
+      const fileName = file ? file.name : "PMC量測結果_範例.xlsx";
+      document.getElementById("topStatus").textContent = "檢查完成";
+      document.getElementById("resultArea").innerHTML = `
+        <div class="result-banner">
+          <div>
+            <b>量測結果：OK</b>
+            <span>${escapeHtml(fileName)} 已完成模擬檢查，未發現超公差或漏填。</span>
+          </div>
+          <div class="result-ok">OK</div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>狀態</th>
+                <th>檢查項目</th>
+                <th>Excel 位置</th>
+                <th>讀到的值</th>
+                <th>允收範圍</th>
+                <th>說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag ok">OK</span></td>
+                <td>尺寸數值格式</td>
+                <td>C12:C38</td>
+                <td>27 筆數值</td>
+                <td>必須為數字</td>
+                <td>沒有文字、空白或符號錯誤。</td>
+              </tr>
+              <tr>
+                <td><span class="tag ok">OK</span></td>
+                <td>公差比對</td>
+                <td>依規格表</td>
+                <td>全部在範圍內</td>
+                <td>下限 ~ 上限</td>
+                <td>無超上限或低於下限。</td>
+              </tr>
+              <tr>
+                <td><span class="tag warn">待規格</span></td>
+                <td>填錯格檢查</td>
+                <td>範本座標</td>
+                <td>等待範本定義</td>
+                <td>固定欄位</td>
+                <td>等未來有範本後，會鎖定每個尺寸應填位置。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mail-preview">
+          <div class="mail-card">
+            <h3>Outlook 轉寄預覽</h3>
+            <div class="kv">
+              <span>收件人</span><b>之後由 Email 欄自動帶入</b>
+              <span>主旨</span><b>精測量測完成通知 - ${escapeHtml(document.getElementById("scheduleNo").value)}</b>
+              <span>附件</span><b>${escapeHtml(fileName)}</b>
+              <span>狀態</span><b>等待使用者確認寄出</b>
+            </div>
+            <button class="primary disabled">未來：自動轉寄 Outlook</button>
+            <p class="note">Email 欄建立前，這裡會先顯示「找不到申請者 Email」，不會真的寄出。</p>
+          </div>
+
+          <div class="mail-card">
+            <h3>信件內容</h3>
+            <textarea readonly>您好，您的精測排程已完成量測。
+
+排程編號：${escapeHtml(document.getElementById("scheduleNo").value)}
+料號：${escapeHtml(document.getElementById("partNo").value)}
+量測結果：OK
+檢查狀態：量測數值皆在公差範圍內
+
+請安排取回樣品，謝謝。</textarea>
+          </div>
+        </div>
+      `;
+    }
+
+    function resetPrototype() {
+      selectedPrototypeFile = null;
+      document.getElementById("fileInput").value = "";
+      updateFileName("");
+      document.getElementById("topStatus").textContent = "等待上傳";
+      document.getElementById("resultArea").innerHTML = '<div class="empty-state">選擇檔案後，按「模擬檢查」查看結果。</div>';
+    }
+
+    function escapeHtml(text) {
+      return String(text == null ? "" : text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    initDropZone();
+  </script>
+</body>
+</html>
